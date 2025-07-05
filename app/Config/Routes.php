@@ -9,7 +9,7 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index', ['filter' => 'auth']);
 
 $routes->get('login', 'AuthController::login');
-$routes->post('login', 'AuthController::login', ['filter' => 'redirect']);
+$routes->post('login', 'AuthController::login');
 $routes->get('logout', 'AuthController::logout');
 
 $routes->group('produk', ['filter' => 'auth'], function ($routes) { 
@@ -17,6 +17,7 @@ $routes->group('produk', ['filter' => 'auth'], function ($routes) {
     $routes->post('', 'ProdukController::create');
     $routes->post('edit/(:any)', 'ProdukController::edit/$1');
     $routes->get('delete/(:any)', 'ProdukController::delete/$1');
+    $routes->get('download', 'ProdukController::download');
 });
 
 $routes->group('productcategory', ['filter' => 'auth'], function ($routes) { 
@@ -26,10 +27,6 @@ $routes->group('productcategory', ['filter' => 'auth'], function ($routes) {
     $routes->get('delete/(:any)', 'ProductCategoryController::delete/$1');
 });
 
-
-
-
-
 $routes->group('keranjang', ['filter' => 'auth'], function ($routes) {
     $routes->get('', 'TransaksiController::index');
     $routes->post('', 'TransaksiController::cart_add');
@@ -38,7 +35,12 @@ $routes->group('keranjang', ['filter' => 'auth'], function ($routes) {
     $routes->get('clear', 'TransaksiController::cart_clear');
 });
 
-$routes->get('/auth', 'AuthController::index');
+$routes->get('checkout', 'TransaksiController::checkout', ['filter' => 'auth']);
+$routes->post('buy', 'TransaksiController::buy', ['filter' => 'auth']);
+
+$routes->get('get-location', 'Location::getKelurahan');
+$routes->get('get-cost', 'TransaksiController::getCost');
+
 $routes->get('faq', 'Home::faq', ['filter' => 'auth']);
 $routes->get('profile', 'Home::profile', ['filter' => 'auth']);
 $routes->get('contact', 'Home::contact', ['filter' => 'auth']);
