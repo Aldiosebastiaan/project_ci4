@@ -2,68 +2,107 @@
 
 namespace App\Controllers;
 
+use App\Controllers\BaseController;
 use App\Models\DiskonModel;
 
 class DiskonController extends BaseController
 {
-    protected $diskonModel;
-
-    public function __construct()
-    {
-        $this->diskonModel = new DiskonModel();
-    }
-
     public function index()
     {
-        $editData = null;
-        if ($this->request->getGet('edit')) {
-            $editData = $this->diskonModel->find($this->request->getGet('edit'));
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/')->with('error', 'Akses hanya untuk admin');
         }
+        $model = new DiskonModel();
+        $data['diskon'] = $model->findAll();
+$data['validation'] = session()->getFlashdata('validation');
 
-        $data = [
-            'title' => 'Data Diskon',
-            'diskon' => $this->diskonModel->orderBy('tanggal', 'ASC')->findAll(),
-            'editData' => $editData
-        ];
+session()->set('diskon_nominal');
 
         return view('v_diskon', $data);
     }
 
- public function save()
-{
-    $id = $this->request->getPost('id');
-    $tanggal = $this->request->getPost('tanggal');
-    $nominal = $this->request->getPost('nominal');
+    public function store()
+    {
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/')->with('error', 'Akses hanya untuk admin');
+        }
 
-    // Cek apakah tanggal sudah ada, dan abaikan data yang sedang di-edit
-    $existing = $this->diskonModel
-        ->where('tanggal', $tanggal)
-        ->where('id !=', $id) // agar bisa update tanggal yg sama pada data sendiri
-        ->first();
+        $rules = [
+            'tanggal' => [
+                'rules' => 'required|is_unique[diskon.tanggal]',
+                'errors' => [
+                    'required' => 'Tanggal harus diisi.',
+                    'is_unique' => 'Tanggal diskon sudah ada.'
+                ]
+            ],
+            'nominal' => [
+                'rules' => 'required|numeric',
+                'errors' => [
+                    'required' => 'Nominal harus diisi.',
+                    'numeric' => 'Nominal harus berupa angka.'
+                ]
+            ]
+        ];
 
-    if ($existing) {
-        return redirect()->to('/diskon')
-            ->with('error', 'Diskon untuk tanggal tersebut sudah ada.');
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('validation', $this->validator);
+        }
+
+        $model = new DiskonModel();
+        $model->save([
+            'tanggal' => $this->request->getPost('tanggal'),
+            'nominal' => $this->request->getPost('nominal'),
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => null
+        ]);
+        return redirect()->to('/diskon')->with('success', 'Data diskon berhasil ditambahkan.');
     }
 
-    $data = [
-        'tanggal' => $tanggal,
-        'nominal' => $nominal,
-    ];
-
-    if ($id) {
-        $this->diskonModel->update($id, $data);
-    } else {
-        $this->diskonModel->insert($data);
+    public function edit($id)
+    {
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/')->with('error', 'Akses hanya untuk admin');
+        }
+        $model = new DiskonModel();
+        $data['diskon'] = $model->find($id);
+        $data['validation'] = \Config\Services::validation();
+        return view('v_diskon', $data);
     }
 
-    return redirect()->to('/diskon')->with('success', 'Diskon berhasil disimpan.');
-}
-
+    public function update($id)
+    {
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/')->with('error', 'Akses hanya untuk admin');
+        }
+        $validation = $this->validate([
+            'tanggal' => [
+                'rules' => "required|is_unique[diskon.tanggal,id,{$id}]",
+                'errors' => [
+                    'required' => 'Tanggal harus diisi.',
+                    'is_unique' => 'Tanggal diskon sudah ada.'
+                ]
+            ],
+            'nominal' => 'required|numeric'
+        ]);
+        if (!$validation) {
+            return redirect()->back()->withInput()->with('validation', $this->validator);
+        }
+        $model = new DiskonModel();
+        $model->update($id, [
+            'tanggal' => $this->request->getPost('tanggal'),
+            'nominal' => $this->request->getPost('nominal'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+        return redirect()->to('/diskon')->with('success', 'Data diskon berhasil diubah.');
+    }
 
     public function delete($id)
     {
-        $this->diskonModel->delete($id);
-        return redirect()->to('/diskon');
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/')->with('error', 'Akses hanya untuk admin');
+        }
+        $model = new DiskonModel();
+        $model->delete($id);
+        return redirect()->to('/diskon')->with('success', 'Data diskon berhasil dihapus.');
     }
 }
