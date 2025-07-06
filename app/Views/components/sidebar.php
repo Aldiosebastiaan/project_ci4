@@ -37,7 +37,7 @@
                     <i class="bi bi-receipt"></i>
                     <span>Diskon</span>
                 </a>
-            </li><!-- End Produk Nav -->
+            </li><!-- End Diskon Nav -->
         <?php
         }
         ?>
