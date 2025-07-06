@@ -9,12 +9,25 @@
         <i class="bi bi-list toggle-sidebar-btn"></i>
     </div><!-- End Logo -->
 
+<div class="d-flex align-items-center justify-content-center gap-2" style="margin-top: 10px;">
+    <!-- Search -->
     <div class="search-bar">
         <form class="search-form d-flex align-items-center" method="POST" action="#">
             <input type="text" name="query" placeholder="Search" title="Enter search keyword">
-            <button type="submit" title="Search"><i class="bi bi-search"></i></button>
+            <button type="submit" title="Search">
+                <i class="bi bi-search"></i>
+            </button>
         </form>
-    </div><!-- End Search Bar -->
+    </div>
+
+    <!-- Diskon -->
+    <?php if (session()->get('diskon_nominal')): ?>
+        <div class="bg-success text-white px-3 py-1 rounded" style="font-weight: 500; white-space: nowrap;">
+            Diskon hari ini: <?= number_format(session()->get('diskon_nominal'), 0, ',', '.'); ?>/item
+        </div>
+    <?php endif; ?>
+</div>
+
 
     <nav class="header-nav ms-auto">
         <ul class="d-flex align-items-center">

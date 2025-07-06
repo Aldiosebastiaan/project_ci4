@@ -16,12 +16,10 @@
         </div> 
         <div class="col-12">
             <label for="kelurahan" class="form-label">Kelurahan</label>
-            <strong>select kelurahan</strong>
             <select class="form-control" id="kelurahan" name="kelurahan" required></select>
         </div>
         <div class="col-12">
             <label for="layanan" class="form-label">Layanan</label>
-            <strong>select layanan</strong>
             <select class="form-control" id="layanan" name="layanan" required></select>
         </div>
         <div class="col-12">
@@ -78,6 +76,7 @@
         </form><!-- Vertical Form -->
     </div>
 </div>
+<?= $this->endSection() ?>
 <?= $this->section('script') ?>
 <script>
 $(document).ready(function() {
@@ -111,6 +110,31 @@ $(document).ready(function() {
     minimumInputLength: 3
 });
 
+$("#kelurahan").on('change', function() {
+    var id_kelurahan = $(this).val(); 
+    $("#layanan").empty();
+    ongkir = 0;
+
+    $.ajax({
+        url: "<?= site_url('get-cost') ?>",
+        type: 'GET',
+        data: { 
+            'destination': id_kelurahan, 
+        },
+        dataType: 'json',
+        success: function(data) { 
+            data.forEach(function(item) {
+                var text = item["description"] + " (" + item["service"] + ") : estimasi " + item["etd"] + "";
+                $("#layanan").append($('<option>', {
+                    value: item["cost"],
+                    text: text 
+                }));
+            });
+            hitungTotal(); 
+        },
+    });
+});
+
 $("#layanan").on('change', function() {
     ongkir = parseInt($(this).val());
     hitungTotal();
@@ -125,5 +149,4 @@ $("#layanan").on('change', function() {
     }
 });
 </script>
-<?= $this->endSection() ?>
 <?= $this->endSection() ?>

@@ -28,6 +28,20 @@
         <?php
         }
         ?>
+
+         <?php
+        if (session()->get('role') == 'admin') {
+        ?>
+            <li class="nav-item">
+                <a class="nav-link <?php echo (uri_string() == 'diskon') ? "" : "collapsed" ?>" href="diskon">
+                    <i class="bi bi-receipt"></i>
+                    <span>Diskon</span>
+                </a>
+            </li><!-- End Produk Nav -->
+        <?php
+        }
+        ?>
+
         <!-- Product Category -->
         <li class="nav-item">
             <a class="nav-link <?php echo (uri_string()=='product_category')? "" : "collapsed" ?>" href="productcategory">

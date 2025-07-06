@@ -11,7 +11,7 @@ class TransaksiController extends BaseController
     protected $client;
     protected $apiKey;
     protected $transaction;
-    protected $transactiondetail;
+    protected $transaction_detail;
 
     function __construct()
     {
@@ -21,7 +21,7 @@ class TransaksiController extends BaseController
         $this->client = new \GuzzleHttp\Client();
         $this->apiKey = env('COST_KEY');
         $this->transaction = new TransactionModel();
-        $this->transaction = new TransactionDetailModel();
+        $this->transaction_detail = new TransactionDetailModel();
     }
 
     public function index()
@@ -31,18 +31,32 @@ class TransaksiController extends BaseController
         return view('v_keranjang', $data);
     }
 
-    public function cart_add()
-    {
-        $this->cart->insert(array(
-            'id'        => $this->request->getPost('id'),
-            'qty'       => 1,
-            'price'     => $this->request->getPost('harga'),
-            'name'      => $this->request->getPost('nama'),
-            'options'   => array('foto' => $this->request->getPost('foto'))
-        ));
-        session()->setflashdata('success', 'Produk berhasil ditambahkan ke keranjang. (<a href="' . base_url() . 'keranjang">Lihat</a>)');
-        return redirect()->to(base_url('/'));
-    }
+public function cart_add()
+{
+    // Ambil harga asli dan pastikan nilainya numerik
+    $hargaAsli = (int) $this->request->getPost('harga');
+    $diskon = (int) (session()->get('diskon_nominal') ?? 0);
+
+    // Hitung harga setelah diskon, pastikan tidak negatif
+    $hargaSetelahDiskon = max($hargaAsli - $diskon, 0);
+
+    $this->cart->insert([
+        'id'      => $this->request->getPost('id'),
+        'qty'     => 1,
+        'price'   => $hargaSetelahDiskon,
+        'name'    => $this->request->getPost('nama'),
+        'options' => [
+            'foto'        => $this->request->getPost('foto'),
+            'harga_asli'  => $hargaAsli,
+            'diskon'      => $diskon,
+        ],
+    ]);
+
+    session()->setFlashdata('success', 'Produk berhasil ditambahkan ke keranjang. (<a href="' . base_url() . 'keranjang">Lihat</a>)');
+    return redirect()->to(base_url('/'));
+}
+
+
 
     public function cart_clear()
     {
@@ -154,18 +168,25 @@ public function buy()
         $last_insert_id = $this->transaction->getInsertID();
 
         foreach ($this->cart->contents() as $value) {
-            $dataFormDetail = [
-                'transaction_id' => $last_insert_id,
-                'product_id' => $value['id'],
-                'jumlah' => $value['qty'],
-                'diskon' => 0,
-                'subtotal_harga' => $value['qty'] * $value['price'],
-                'created_at' => date("Y-m-d H:i:s"),
-                'updated_at' => date("Y-m-d H:i:s")
-            ];
+    $hargaSatuan = $value['price'];
+    $qty = $value['qty'];
+    $subtotal = $qty * $hargaSatuan;
 
-            $this->transaction_detail->insert($dataFormDetail);
-        }
+    $diskonPerItem = session()->get('diskon_nominal') ?? 0;
+
+    $dataFormDetail = [
+        'transaction_id'  => $last_insert_id,
+        'product_id'      => $value['id'],
+        'jumlah'          => $qty,
+        'diskon'          => $diskonPerItem,
+        'subtotal_harga'  => $subtotal,
+        'created_at'      => date("Y-m-d H:i:s"),
+        'updated_at'      => date("Y-m-d H:i:s")
+    ];
+
+    $this->transaction_detail->insert($dataFormDetail);
+}
+
 
         $this->cart->destroy();
  
